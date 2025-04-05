@@ -1,10 +1,9 @@
 #Project 2 Test Brian
 
 import time
-import math
 import threading
 import asyncio
-from multiprocessing import Process, set_start_method
+import multiprocessing
 
 def is_prime(n):
     if n <= 1:
@@ -17,79 +16,82 @@ def is_prime(n):
 def fibonacci(n):
     a, b = 0, 1
     for _ in range(n):
-            a, b = b, a + b
+        a, b = b, a + b
     return a
 
 def factorial(n):
-    return math.factorial(n)
+    result = 1
+    for i in range(2, n + 1):
+        result *= 1
+    return result
 
-def largest_prime(duration_sec=180):
-    print(f"\nSearching for largest prime number in {duration_sec} seconds")
+def largest_prime(duration):
     start_time = time.time()
     num = 0
-    largest = 0
-    while time.time() - start_time < duration_sec:
+    largest = 2
+    while time.time() - start_time < duration:
         if is_prime(num):
             largest = num
     num += 1
-    print(f"Largest prime found: {largest}")
     return largest
 
-def fibonacci_task(n):
+def fibonacci_start(n):
+     print(f"[Fibonacci] Starting at {time.time():.2f}")
      result = fibonacci(n)
-     print(f"\n Fibonacci({n}) = {result}")
+     print(f"[Fibonacci] Done at {time.time():.2f} | Digits: {len(str(result))}")
 
-def factorial_task(n):
+def factorial_start(n):
+     print(f"[Factorial] Starting at {time.time():.2f}")
      result = factorial(n)
-     print(f"\n Factorial({n}) = {result}")
+     print(f"[Factorial] Done at {time.time():.2f} | Digits: {len(str(result))}")
 
 def run_threaded(n):
-     print("\nRunning Threaded")
-     start = time.time()
-t1 = threading.Thread(target=fibonacci_task, args=(n,))
-t2 = threading.Thread(target=factorial_task, args=(n,))
+    print("\nRunning Threaded")
+t1 = threading.Thread(target=fibonacci_start, args=(n,))
+t2 = threading.Thread(target=factorial_start, args=(n,))
+start = time.time()
 t1.start()
 t2.start()
 t1.join()
 t2.join()
-print(f"\nThreaded time: {time.time() - start:.2f} seconds")
+print(f"[Threaded] Total time: {time.time() - start:.2f}s")
             
 def run_multiprocessing(n):
     print("\nRun Multiprocessing")
-    start = time.time()
-p1 = Process(target=fibonacci_task, args=(n,))
-p2 = Process(target=factorial_task, args=(n,))
+ctx = multiprocessing.get_context("spawn")
+p1 = ctx.Process(target=fibonacci_start, args=(n,))
+p2 = ctx.Process(target=factorial_start, args=(n,))
+start = time.time()
 p1.start()
 p2.start()
 p1.join()
 p2.join()
-print(f" Multiprocessing time: {time.time() - start:.2f} seconds")
+print(f"[Multiprocessing] Total time: {time.time() - start:.2f}s")
+
+async def async_fibonacci(n):
+     print(f"[Async Fibonacci] Starting at {time.time().2f}")
+     result = await asyncio.to_thread(fibonacci, n)
+     print(f"[Async Fibonacci] Done at {time.time():.2f} | Digits: {len(str(result))}")
+
+async def async_factorial(n):
+    print(f"[Async Fibonacci] Starting at {time.time():.2f}")
+    result = await asyncio.to_thread(factorial, n)
+    print(f"[Async Factorial] Done at {time.time():.2f} | Digits: {len(str(result))}")
 
 async def run_async(n):
-     print("\nRunning Async")
-     start = time.time()
+    print("\nRun Async")
+    start = time.time()
+    await asyncio.gather(async_fibonacci(n), async_factorial(n))
+    print(f"[Async] Total time: {time.time() - start:.2f}s")
 
-     async def async_fibonacci(n):
-          fibonacci_task(n)
-
-     async def async_factorial(n):
-          factorial_task(n)
-          await asyncio.gather(
-        async_fibonacci(n),
-        async_factorial(n)
-        )
-print(f"Async time: {time.time() - start:.2f} seconds")
-  
 def main():
-     duration = 180
-     prime = largest_prime(duration_sec=duration)
+     print("Prime calculations for 180 sec")
+     prime = largest_prime(180)
+     print(f"\n Largest Prime found: {prime}\n")
+     
      run_threaded(prime)
      run_multiprocessing(prime)
      asyncio.run(run_async(prime))
 
 if __name__ == "__main__":
-    try:
-         set_start_method("spawn")
-    except RuntimeError:
-         pass
     main()
