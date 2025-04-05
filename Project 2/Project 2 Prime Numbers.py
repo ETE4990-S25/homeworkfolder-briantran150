@@ -1,85 +1,95 @@
-#Prime Number Test Brian
+#Project 2 Test Brian
 
 import time
+import math
+import threading
 import asyncio
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from multiprocessing import Process, set_start_method
 
 def is_prime(n):
     if n <= 1:
         return False
     for i in range(2, int(n ** 0.5) + 1):
-        if n % i ==0:
+        if n % 1 == 0:
             return False
     return True
 
-def find_primes_in_range(start, end):
-    highest_prime = 0
-    for num in range(start, end):
-        if is_prime(num):
-            highest_prime = num
-    return highest_prime
+def fibonacci(n):
+    a, b = 0, 1
+    for _ in range(n):
+            a, b = b, a + b
+    return a
 
-def run_parallel(executor, max_time=180, chunk_size=100_000):
+def factorial(n):
+    return math.factorial(n)
+
+def largest_prime(duration_sec=180):
+    print(f"\nSearching for largest prime number in {duration_sec} seconds")
     start_time = time.time()
-    highest_prime = 0
-    current = 0
+    num = 0
+    largest = 0
+    while time.time() - start_time < duration_sec:
+        if is_prime(num):
+            largest = num
+    num += 1
+    print(f"Largest prime found: {largest}")
+    return largest
 
-    while time.time() - start_time < max_time:
-        ranges = [(current + i * chunk_size, current + (i + 1) * chunk_size) for i in range(executor._max_workers)]
-        with executor as pool:
-            results = list(pool.map(lambda r: find_primes_in_range(*r), ranges))
-            highest_prime = max(highest_prime, max(results))
-            current += len(ranges) * chunk_size
-        
-        return highest_prime, time.time() - start_time
-    
-    def find_highest_prime_multiprocessing():
-        with ProcessPoolExecutor() as executor:
-            return run_parallel(executor)
-    
-    def find_highest_prime_threaded(thread_count=4):
-        with ThreadPoolExecutor(max_workers=thread_count) as executor:
-            return run_parallel(executor)
-        
-    async def find_highest_prime_async():
-        start_time = time.time()
-        highest_prime = 0
-        current = 0
-        chunk_size = 100_000
-        max_time = 180
+def fibonacci_task(n):
+     result = fibonacci(n)
+     print(f"\n Fibonacci({n}) = {result}")
 
-        async def run_task():
-            nonlocal highest_prime, current
-            loop = asyncio.get_running_loop()
-            while time.time() - start_time < max_time:
-                ranges = [current + i * chunk_size, current + (i + 1) * chunk_size for i in range(10)]
-                tasks = [loop.run_in_executor(None, find_primes_in_range, *r) for r in ranges]
-                results = await asyncio.gather(*tasks)
-                highest_prime = max(highest_prime, max(results))
-                current += len(ranges) * chunk_size
-        
-        await run_task()
-        return highest_prime, time.time() - start_time
+def factorial_task(n):
+     result = factorial(n)
+     print(f"\n Factorial({n}) = {result}")
 
-    def main():
-    print("Starting multiprocessing...")
-    mp_prime, mp_time = find_highest_prime_multiprocessing()
-    print(f"Multiprocessing: Highest prime: {mp_prime}, Time: {mp_time:.2f}s")
+def run_threaded(n):
+     print("\nRunning Threaded")
+     start = time.time()
+t1 = threading.Thread(target=fibonacci_task, args=(n,))
+t2 = threading.Thread(target=factorial_task, args=(n,))
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+print(f"\nThreaded time: {time.time() - start:.2f} seconds")
+            
+def run_multiprocessing(n):
+    print("\nRun Multiprocessing")
+    start = time.time()
+p1 = Process(target=fibonacci_task, args=(n,))
+p2 = Process(target=factorial_task, args=(n,))
+p1.start()
+p2.start()
+p1.join()
+p2.join()
+print(f" Multiprocessing time: {time.time() - start:.2f} seconds")
 
-    print("\nStarting threading...")
-    threaded_prime, th_time = find_highest_prime_threaded(thread_count=4)
-    print(f"Threading: Highest prime: {threaded_prime}, Time: {th_time:.2f}s")
+async def run_async(n):
+     print("\nRunning Async")
+     start = time.time()
 
-    print("\nStarting asynchronous...")
-    loop = asyncio.get_event_loop()
-    async_prime, async_time = loop.run_until_complete(find_highest_prime_async())
-    print(f"Asynchronous: Highest prime: {threaded_prime}, Time: {th_time:.2f}s")
+     async def async_fibonacci(n):
+          fibonacci_task(n)
 
-    print("\n--- Performance Comparison ---")
-    print(f"Multiprocessing: {mp_prime} in {mp_time:.2f}s")
-    print(f":Threading: {threaded_prime} in {th-time:.2f}s")
-    print(f"Asynchronous: {async_prime} in {async_time.2f}s")
+     async def async_factorial(n):
+          factorial_task(n)
+          await asyncio.gather(
+        async_fibonacci(n),
+        async_factorial(n)
+        )
+print(f"Async time: {time.time() - start:.2f} seconds")
+  
+def main():
+     duration = 180
+     prime = largest_prime(duration_sec=duration)
+     run_threaded(prime)
+     run_multiprocessing(prime)
+     asyncio.run(run_async(prime))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    try:
+         set_start_method("spawn")
+    except RuntimeError:
+         pass
     main()
-    
