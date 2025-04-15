@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Lebron",
+    "age": 40,
+    "email": "LebronJames23@lakers.com"
+  },
+  {
+    "name": "Brian",
+    "age": 25,
+    "email": "Briantherook@cpp.edu",
+    "student_identification": "123456"
+  }
+]
